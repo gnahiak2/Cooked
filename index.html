@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cooked - Generate Chaos Recipes</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Cooked - Generate Chaos Recipes</h1>
+  <div id="output"></div>
+  <button id="cook-button">COOK</button>
+  <button id="make-it-worse-button">MAKE IT WORSE</button>
+  <input type="text" id="api-key-input" placeholder="Enter your Groq API key">
+  <script src="script.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 360px;
+      height: 500px;
+      overflow: hidden;
+    }
+
+    body {
+      background: #0d0d0d;
+      color: #00ff88;
+      font-family: monospace;
+      box-sizing: border-box;
+      padding: 10px;
+    }
+
+    input, button {
+      width: 100%;
+      margin-bottom: 6px;
+      background: black;
+      color: #00ff88;
+      border: 1px solid #00ff88;
+      padding: 6px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+  </style>
+</body>
+</html>
