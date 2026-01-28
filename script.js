@@ -13,7 +13,7 @@ Cursed name.
 Explain preparation and fake stats.
 Unhinged but concise.
 `;
-
+//Halo
 async function generateDish(prompt) {
   const res = await fetch(WORKER_URL, {
     method: "POST",
