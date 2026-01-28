@@ -2,167 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Cooked</title>
-  <style>
-    body {
-      background: #0d0d0d;
-      color: #00ff88;
-      font-family: monospace;
-      max-width: 720px;
-      margin: 40px auto;
-      padding: 20px;
-    }
-
-    h1 {
-      margin-top: 0;
-      font-size: 28px;
-    }
-
-    input, button {
-      width: 100%;
-      background: black;
-      color: #00ff88;
-      border: 1px solid #00ff88;
-      padding: 10px;
-      margin-bottom: 10px;
-      font-family: monospace;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    pre {
-      background: black;
-      border: 1px solid #00ff88;
-      padding: 12px;
-      white-space: pre-wrap;
-      line-height: 1.4;
-      min-height: 200px;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .row button {
-      width: 50%;
-    }
-  </style>
+  <title>Cooked!</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <h1>🍳 Cooked</h1>
   <p>You were never meant to cook this.</p>
-
-  <input id="apikey" placeholder="Paste Groq API key" />
-  <button id="saveKey">Save Key</button>
-
+  
   <div class="row">
     <button id="cook">COOK</button>
     <button id="worse">MAKE IT WORSE</button>
   </div>
 
   <pre id="output">awaiting culinary disaster...</pre>
-
-<script>
-const output = document.getElementById("output");
-const apiInput = document.getElementById("apikey");
-
-const BASE_PROMPT = `
-Invent a completely original fictional dish.
-Do NOT use real recipes or real ingredients.
-Invent imaginary ingredients that sound edible but wrong.
-Give it a cursed or funny name.
-Explain ingredients, preparation, and fake stats.
-Keep it concise and unhinged.
-`;
-
-let lastDish = "";
-
-// load saved key
-apiInput.value = localStorage.getItem("groqKey") || "";
-
-// save key
-document.getElementById("saveKey").onclick = () => {
-  const key = apiInput.value.trim();
-  if (!key) {
-    output.textContent = "No key pasted.";
-    return;
-  }
-  localStorage.setItem("groqKey", key);
-  output.textContent = "API key saved locally 👍";
-};
-
-// call Groq
-async function callAI(prompt) {
-  const apiKey = localStorage.getItem("groqKey");
-  if (!apiKey) throw "No API key saved.";
-
-  const res = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: "You are a chaotic experimental chef AI." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 1.0,
-        max_tokens: 400
-      })
-    }
-  );
-
-  const data = await res.json();
-  console.log("Groq response:", data);
-
-  if (!res.ok) {
-    throw data.error?.message || "API error";
-  }
-
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) throw "No text returned.";
-
-  return text;
-}
-
-// COOK
-document.getElementById("cook").onclick = async () => {
-  output.textContent = "Cooking something illegal...";
-  try {
-    lastDish = await callAI(BASE_PROMPT);
-    output.textContent = lastDish;
-  } catch (err) {
-    output.textContent = err;
-  }
-};
-
-// WORSE
-document.getElementById("worse").onclick = async () => {
-  if (!lastDish) {
-    output.textContent = "Nothing to worsen yet.";
-    return;
-  }
-
-  output.textContent = "Making it worse...";
-  try {
-    lastDish = await callAI(
-      "Take the following dish and make it worse, more cursed, and less edible:\n\n" +
-      lastDish
-    );
-    output.textContent = lastDish;
-  } catch (err) {
-    output.textContent = err;
-  }
-};
-</script>
-
+  <img id="dishImage" />
+  <script src="script.js"></script>
 </body>
 </html>

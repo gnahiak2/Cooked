@@ -1,96 +1,88 @@
 const output = document.getElementById("output");
+const imgEl = document.getElementById("dishImage");
 
-const BASE_PROMPT = `Invent a completely original fictional dish. Do NOT use real recipes or real ingredients. Invent imaginary ingredients that sound edible but wrong. Give it a cursed or funny name. Explain ingredients, preparation, and fake stats. Keep it concise and unhinged.`;
+const WORKER_URL = "https://cooked-serverside.wangz9096z.workers.dev";
 
 let lastDish = "";
 
-/* =========================
-   SAVE API KEY
-========================= */
-document.getElementById("saveKey").onclick = async () => {
-  const key = document.getElementById("apikey").value.trim();
-  if (!key) {
-    output.textContent = "No key pasted.";
-    return;
-  }
-  try {
-    await chrome.storage.local.set({ apiKey: key });
-    output.textContent = "API key saved locally 👍";
-  } catch (err) {
-    output.textContent = "Error saving API key.";
-  }
-};
+const BASE_PROMPT = `
+Invent a completely original fictional dish.
+No real ingredients.
+Fake but edible-sounding components.
+Cursed name.
+Explain preparation and fake stats.
+Unhinged but concise.
+`;
 
-/* =========================
-   CALL GROQ API
-========================= */
-async function callAI(prompt) {
-  try {
-    const res = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${await chrome.storage.local.get("apiKey")?.apiKey}`
-        },
-        body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
-          messages: [
-            { role: "system", content: "You are a chaotic experimental chef AI." },
-            { role: "user", content: prompt }
-          ],
-          temperature: 1.0,
-          max_tokens: 400
-        })
-      }
-    );
+async function generateDish(prompt) {
+  const res = await fetch(WORKER_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "qwen/qwen3-32b",
+      messages: [
+        { role: "system", content: "You are a chaotic experimental chef AI." },
+        { role: "user", content: prompt }
+      ],
+      temperature: 1.1,
+      max_tokens: 400
+    })
+  });
 
-    const data = await res.json();
-    console.log("Groq response:", data);
-
-    // ✅ HANDLE ERRORS SAFELY
-    if (!res.ok) {
-      throw data.error?.message || "API request failed.";
-    }
-
-    // ✅ NORMAL SUCCESS PATH
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) {
-      throw "No text returned from model.";
-    }
-
-    return text;
-  } catch (err) {
-    console.error(err);
-    return Promise.reject(err);
-  }
+  const data = await res.json();
+  if (data.error) throw data.error;
+  return data.choices[0].message.content;
 }
 
-/* =========================
-   COOK BUTTON
-========================= */
+async function generateImage(description) {
+  const res = await fetch(WORKER_URL + "/image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash-image",
+      prompt: `A cursed fictional food dish. Looks edible but wrong.
+Dark humor. Experimental plating.
+Description: ${description}`,
+      size: "512x512"
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) throw data.error;
+
+  const b64 = data.data?.[0]?.b64_json;
+  if (!b64) throw "No image returned";
+
+  imgEl.src = "data:image/png;base64," + b64;
+  imgEl.style.display = "block";
+}
+
 document.getElementById("cook").onclick = async () => {
   output.textContent = "Cooking something illegal...";
+  imgEl.style.display = "none";
+
   try {
-    const text = await callAI(BASE_PROMPT);
-    output.textContent = text;
-    lastDish = text;
-  } catch (err) {
-    output.textContent = err;
+    lastDish = await generateDish(BASE_PROMPT);
+    output.textContent = lastDish;
+    await generateImage(lastDish);
+  } catch (e) {
+    output.textContent = JSON.stringify(e, null, 2);
   }
 };
 
-/* =========================
-   MAKE IT WORSE BUTTON
-========================= */
 document.getElementById("worse").onclick = async () => {
-  if (!lastDish) {
-    output.textContent = "Nothing to worsen yet.";
-    return;
-  }
+  if (!lastDish) return;
 
   output.textContent = "Making it worse...";
+  imgEl.style.display = "none";
+
   try {
-    const text = await callAI(
-      "Take the following dish and make it worse, more
+    lastDish = await generateDish(
+      "Make this dish worse, more cursed, and less edible:\n\n" + lastDish
+    );
+    output.textContent = lastDish;
+    await generateImage(lastDish);
+  } catch (e) {
+    output.textContent = JSON.stringify(e, null, 2);
+  }
+};
