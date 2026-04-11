@@ -22,10 +22,10 @@ Built with a static frontend and a **Cloudflare Worker backend** to safely proxy
 
 ## 🧠 Architecture
 
-Browser (HTML / CSS / JS)
-↓
-Cloudflare Worker (API proxy)
-↓
+Browser (HTML / CSS / JS)  
+↓  
+Cloudflare Worker (API proxy)  
+↓  
 HackAI (Text + Image models)
 
 
