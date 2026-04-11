@@ -22,10 +22,10 @@ Built with a static frontend and a **Cloudflare Worker backend** to safely proxy
 
 ## 🧠 Architecture
 
-Browser (HTML / CSS / JS)
-↓
-Cloudflare Worker (API proxy)
-↓
+Browser (HTML / CSS / JS)  
+↓  
+Cloudflare Worker (API proxy)  
+↓  
 HackAI (Text + Image models)
 
 
@@ -62,7 +62,3 @@ Cloudflare Workers solve all of this cleanly.
 ```bash
 wrangler deploy
 ```
-
-## NOTE
-
-THIS API KEY WAS MY OWN I WILL NOT DISCLOSE THE BACKEND REPO DUE TO IT HAVING THE API KEY HARDCODED
