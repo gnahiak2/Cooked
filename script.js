@@ -219,11 +219,50 @@ Description: ${description}`,
   }
   if (data.error) throw new Error(data.error.message || data.error);
 
-  const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw new Error("No image returned");
+  const imageSrc = extractImageSrc(data);
+  if (!imageSrc) throw new Error("No image returned");
 
-  imgEl.src = "data:image/png;base64," + b64;
+  imgEl.src = imageSrc;
   imgEl.style.display = "block";
+}
+
+function extractImageSrc(data) {
+  const candidates = [
+    data?.data?.[0]?.b64_json,
+    data?.data?.[0]?.base64,
+    data?.images?.[0]?.b64_json,
+    data?.images?.[0]?.base64,
+    data?.image?.b64_json,
+    data?.image?.base64,
+    data?.output?.[0]?.b64_json,
+    data?.output?.[0]?.base64,
+    data?.output?.[0]?.image?.b64_json,
+    data?.output?.[0]?.image?.base64,
+    data?.output?.[0]?.content?.[0]?.image_base64,
+    data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data,
+    data?.data?.[0]?.url,
+    data?.images?.[0]?.url,
+    data?.image?.url,
+    data?.output?.[0]?.url
+  ];
+
+  for (const value of candidates) {
+    const src = normalizeImageValue(value);
+    if (src) return src;
+  }
+
+  return "";
+}
+
+function normalizeImageValue(value) {
+  if (!value || typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/^data:image\//i.test(trimmed)) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  // Assume plain base64 payload if it's not a URL/data URI.
+  return "data:image/png;base64," + trimmed;
 }
 
 async function readJsonResponse(res) {
