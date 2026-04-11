@@ -16,6 +16,8 @@ Fake but edible-sounding components.
 Cursed but bizarre name.
 Explain preparation and fake stats.
 Unhinged but concise.
+Output plain text only.
+No markdown, no code blocks, no bullet symbols.
 `;
 //Halo
 async function generateDish(prompt) {
@@ -43,7 +45,7 @@ async function generateDish(prompt) {
     throw new Error("No recipe text returned by model");
   }
 
-  return content;
+  return toPlainText(content);
 }
 
 async function generateImage(description) {
@@ -92,6 +94,17 @@ function formatError(err) {
   return String(err);
 }
 
+function toPlainText(text) {
+  return String(text)
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/^\s{0,3}[-*+]\s+/gm, "")
+    .replace(/^\s{0,3}\d+\.\s+/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
 function setLoadingState(isLoading, message) {
   loadingOverlay.style.display = isLoading ? "flex" : "none";
   loadingOverlay.setAttribute("aria-hidden", isLoading ? "false" : "true");
@@ -129,7 +142,7 @@ worseBtn.onclick = async () => {
 
   try {
     lastDish = await generateDish(
-      "Make this dish worse, more cursed, and less edible:\n\n" + lastDish
+      "Make this dish worse, more cursed, and less edible. Output plain text only.\n\n" + lastDish
     );
     output.textContent = lastDish;
     await generateImage(lastDish);
