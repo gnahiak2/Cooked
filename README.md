@@ -62,7 +62,3 @@ Cloudflare Workers solve all of this cleanly.
 ```bash
 wrangler deploy
 ```
-
-## NOTE
-
-THIS API KEY WAS MY OWN I WILL NOT DISCLOSE THE BACKEND REPO DUE TO IT HAVING THE API KEY HARDCODED
