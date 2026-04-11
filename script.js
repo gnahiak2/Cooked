@@ -33,9 +33,17 @@ async function generateDish(prompt) {
     })
   });
 
-  const data = await res.json();
-  if (data.error) throw data.error;
-  return data.choices[0].message.content;
+  const data = await readJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(data?.error?.message || data?.error || `Request failed (${res.status})`);
+  }
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) {
+    throw new Error("No recipe text returned by model");
+  }
+
+  return content;
 }
 
 async function generateImage(description) {
@@ -51,14 +59,37 @@ Description: ${description}`,
     })
   });
 
-  const data = await res.json();
-  if (data.error) throw data.error;
+  const data = await readJsonResponse(res);
+  if (!res.ok) {
+    throw new Error(data?.error?.message || data?.error || `Image request failed (${res.status})`);
+  }
+  if (data.error) throw new Error(data.error.message || data.error);
 
   const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw "No image returned";
+  if (!b64) throw new Error("No image returned");
 
   imgEl.src = "data:image/png;base64," + b64;
   imgEl.style.display = "block";
+}
+
+async function readJsonResponse(res) {
+  const text = await res.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`Invalid server response: ${text.slice(0, 160)}`);
+  }
+}
+
+function formatError(err) {
+  if (!err) return "Unknown error";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object") {
+    return err.message || err.error || JSON.stringify(err, null, 2);
+  }
+  return String(err);
 }
 
 function setLoadingState(isLoading, message) {
@@ -83,7 +114,7 @@ cookBtn.onclick = async () => {
     output.textContent = lastDish;
     await generateImage(lastDish);
   } catch (e) {
-    output.textContent = JSON.stringify(e, null, 2);
+    output.textContent = "Error: " + formatError(e);
   } finally {
     setLoadingState(false);
   }
@@ -103,7 +134,7 @@ worseBtn.onclick = async () => {
     output.textContent = lastDish;
     await generateImage(lastDish);
   } catch (e) {
-    output.textContent = JSON.stringify(e, null, 2);
+    output.textContent = "Error: " + formatError(e);
   } finally {
     setLoadingState(false);
   }
