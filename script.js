@@ -1,15 +1,15 @@
 const output = document.getElementById("output");
 const imgEl = document.getElementById("dishImage");
-
+//Worker URL - replace with your own if self-hosting or using a different service
 const WORKER_URL = "https://cooked-serverside.wangz9096z.workers.dev";
 
 let lastDish = "";
 
 const BASE_PROMPT = `
 Invent a completely original fictional dish.
-No real ingredients.
+Real ingredients only.
 Fake but edible-sounding components.
-Cursed name.
+Cursed but bizarre name.
 Explain preparation and fake stats.
 Unhinged but concise.
 `;
