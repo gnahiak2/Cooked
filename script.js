@@ -40,12 +40,44 @@ async function generateDish(prompt) {
     throw new Error(data?.error?.message || data?.error || `Request failed (${res.status})`);
   }
 
-  const content = data?.choices?.[0]?.message?.content;
+  const content = extractModelText(data);
   if (!content) {
     throw new Error("No recipe text returned by model");
   }
 
   return toPlainText(content);
+}
+
+function extractModelText(data) {
+  const choice = data?.choices?.[0];
+
+  // Chat-completions style: message.content can be a string or an array of parts.
+  const messageContent = choice?.message?.content;
+  if (typeof messageContent === "string" && messageContent.trim()) {
+    return messageContent;
+  }
+  if (Array.isArray(messageContent)) {
+    const fromParts = messageContent
+      .map((part) => {
+        if (typeof part === "string") return part;
+        return part?.text || part?.content || "";
+      })
+      .join("\n")
+      .trim();
+    if (fromParts) return fromParts;
+  }
+
+  // Text-completions style.
+  if (typeof choice?.text === "string" && choice.text.trim()) {
+    return choice.text;
+  }
+
+  // Responses API style.
+  if (typeof data?.output_text === "string" && data.output_text.trim()) {
+    return data.output_text;
+  }
+
+  return "";
 }
 
 async function generateImage(description) {
