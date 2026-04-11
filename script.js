@@ -115,7 +115,7 @@ async function generateImage(description) {
     body: JSON.stringify({
       model: "google/gemini-2.5-flash-image",
       prompt: `A cursed fictional food dish. Looks edible but wrong.
-Dark humor. Experimental plating.
+Dark humor.
 Description: ${description}`,
       size: "512x512"
     })
