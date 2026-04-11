@@ -8,6 +8,8 @@ const loadingText = document.getElementById("loadingText");
 const WORKER_URL = "https://cooked-serverside.wangz9096z.workers.dev";
 
 let lastDish = "";
+const MIN_RECIPE_STEPS = 8;
+const MAX_RECIPE_CONTINUATIONS = 2;
 
 const BASE_PROMPT = `
 Invent a completely original fictional dish.
@@ -32,6 +34,29 @@ Also make it like an actually possible recipe that someone could attempt if they
 `;
 //Halo
 async function generateDish(prompt) {
+  let recipe = "";
+  let nextPrompt = prompt;
+
+  for (let attempt = 0; attempt <= MAX_RECIPE_CONTINUATIONS; attempt++) {
+    const { text, finishReason } = await requestDishCompletion(nextPrompt);
+    recipe = mergeRecipeText(recipe, text);
+
+    const needsContinuation = finishReason === "length" || isRecipeLikelyIncomplete(recipe);
+    if (!needsContinuation) {
+      return recipe;
+    }
+
+    if (attempt === MAX_RECIPE_CONTINUATIONS) {
+      return recipe;
+    }
+
+    nextPrompt = buildContinuationPrompt(recipe);
+  }
+
+  return recipe;
+}
+
+async function requestDishCompletion(prompt) {
   const res = await fetch(WORKER_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,7 +67,7 @@ async function generateDish(prompt) {
         { role: "user", content: prompt }
       ],
       temperature: 1.1,
-      max_tokens: 900
+      max_tokens: 1100
     })
   });
 
@@ -56,7 +81,65 @@ async function generateDish(prompt) {
     throw new Error("No recipe text returned by model");
   }
 
-  return toPlainText(content);
+  return {
+    text: toPlainText(content),
+    finishReason: data?.choices?.[0]?.finish_reason || data?.finish_reason || ""
+  };
+}
+
+function buildContinuationPrompt(currentRecipe) {
+  return [
+    "Continue this exact recipe from where it stops.",
+    "Only output the missing remainder.",
+    "Do not restart or repeat previous sections.",
+    "If the steps are incomplete, continue from the next step number.",
+    "Output plain text only.",
+    "",
+    currentRecipe
+  ].join("\n");
+}
+
+function isRecipeLikelyIncomplete(text) {
+  const cleaned = String(text || "").trim();
+  if (!cleaned) return true;
+
+  const stepCount = countRecipeSteps(cleaned);
+  if (stepCount < MIN_RECIPE_STEPS) return true;
+
+  // Heuristic for obvious truncation at the tail.
+  return /[:,;\-]$/.test(cleaned);
+}
+
+function countRecipeSteps(text) {
+  const matches = String(text).match(/^\s*(?:step\s*)?\d{1,2}[).:-]\s+/gim);
+  return matches ? matches.length : 0;
+}
+
+function mergeRecipeText(existing, addition) {
+  const left = String(existing || "").trim();
+  const right = String(addition || "").trim();
+
+  if (!left) return right;
+  if (!right) return left;
+  if (left.includes(right)) return left;
+  if (right.includes(left)) return right;
+
+  const leftLines = left.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const rightLines = right.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const maxOverlap = Math.min(12, leftLines.length, rightLines.length);
+
+  let overlap = 0;
+  for (let size = maxOverlap; size >= 1; size--) {
+    const leftTail = leftLines.slice(-size).join("\n");
+    const rightHead = rightLines.slice(0, size).join("\n");
+    if (leftTail === rightHead) {
+      overlap = size;
+      break;
+    }
+  }
+
+  const uniqueRight = overlap > 0 ? rightLines.slice(overlap).join("\n") : right;
+  return uniqueRight ? `${left}\n${uniqueRight}` : left;
 }
 
 function extractModelText(data) {
