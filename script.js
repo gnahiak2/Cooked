@@ -14,10 +14,19 @@ Invent a completely original fictional dish.
 Real ingredients only.
 Fake but edible-sounding components.
 Cursed but bizarre name.
-Explain preparation and fake stats.
-Unhinged but concise.
+Write a complete full-length recipe, not a short summary.
+Use this exact structure:
+Dish Name
+Short pitch
+Servings + prep time + cook time
+Ingredients list (one per line)
+Step-by-step method (at least 8 clear steps)
+Fake nutrition stats
+Chef warning
+Explain preparation and fake stats in detail.
+Unhinged but coherent.
 Output plain text only.
-No markdown, no code blocks, no bullet symbols.
+No markdown or code blocks.
 Make it sound as appetizing as possible while being very wrong and inedible.
 Also make it like an actually possible recipe that someone could attempt if they were very reckless and didn't care about the consequences.
 `;
@@ -33,7 +42,7 @@ async function generateDish(prompt) {
         { role: "user", content: prompt }
       ],
       temperature: 1.1,
-      max_tokens: 400
+      max_tokens: 900
     })
   });
 
@@ -159,8 +168,6 @@ function toPlainText(text) {
     // Keep fenced content but strip fence marker lines.
     .replace(/^```[\w-]*\s*$/gm, "")
     .replace(/^```\s*$/gm, "")
-    .replace(/^\s{0,3}[-*+]\s+/gm, "")
-    .replace(/^\s{0,3}\d+\.\s+/gm, "")
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/__(.*?)__/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
@@ -209,7 +216,7 @@ worseBtn.onclick = async () => {
 
   try {
     lastDish = await generateDish(
-      "Make this dish worse, more cursed, and less edible. Output plain text only.\n\n" + lastDish
+      "Make this dish worse, more cursed, and less edible. Keep it a complete full recipe with ingredients and at least 8 steps. Output plain text only.\n\n" + lastDish
     );
     output.textContent = lastDish;
     try {
