@@ -18,6 +18,8 @@ Explain preparation and fake stats.
 Unhinged but concise.
 Output plain text only.
 No markdown, no code blocks, no bullet symbols.
+Make it sound as appetizing as possible while being very wrong and inedible.
+Also make it like an actually possible recipe that someone could attempt if they were very reckless and didn't care about the consequences.
 `;
 //Halo
 async function generateDish(prompt) {
@@ -154,7 +156,9 @@ function formatError(err) {
 
 function toPlainText(text) {
   return String(text)
-    .replace(/```[\s\S]*?```/g, "")
+    // Keep fenced content but strip fence marker lines.
+    .replace(/^```[\w-]*\s*$/gm, "")
+    .replace(/^```\s*$/gm, "")
     .replace(/^\s{0,3}[-*+]\s+/gm, "")
     .replace(/^\s{0,3}\d+\.\s+/gm, "")
     .replace(/\*\*(.*?)\*\*/g, "$1")
@@ -183,7 +187,12 @@ cookBtn.onclick = async () => {
   try {
     lastDish = await generateDish(BASE_PROMPT);
     output.textContent = lastDish;
-    await generateImage(lastDish);
+    try {
+      await generateImage(lastDish);
+    } catch (imageError) {
+      // Keep recipe text visible even if image generation fails.
+      output.textContent = `${lastDish}\n\n[Image failed: ${formatError(imageError)}]`;
+    }
   } catch (e) {
     output.textContent = "Error: " + formatError(e);
   } finally {
@@ -203,7 +212,12 @@ worseBtn.onclick = async () => {
       "Make this dish worse, more cursed, and less edible. Output plain text only.\n\n" + lastDish
     );
     output.textContent = lastDish;
-    await generateImage(lastDish);
+    try {
+      await generateImage(lastDish);
+    } catch (imageError) {
+      // Keep recipe text visible even if image generation fails.
+      output.textContent = `${lastDish}\n\n[Image failed: ${formatError(imageError)}]`;
+    }
   } catch (e) {
     output.textContent = "Error: " + formatError(e);
   } finally {
