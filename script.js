@@ -52,29 +52,55 @@ function extractModelText(data) {
   const choice = data?.choices?.[0];
 
   // Chat-completions style: message.content can be a string or an array of parts.
-  const messageContent = choice?.message?.content;
-  if (typeof messageContent === "string" && messageContent.trim()) {
-    return messageContent;
-  }
-  if (Array.isArray(messageContent)) {
-    const fromParts = messageContent
-      .map((part) => {
-        if (typeof part === "string") return part;
-        return part?.text || part?.content || "";
-      })
-      .join("\n")
-      .trim();
-    if (fromParts) return fromParts;
-  }
+  const fromMessage = flattenText(choice?.message?.content);
+  if (fromMessage) return fromMessage;
+
+  // Some providers place text directly on the message.
+  const fromMessageText = flattenText(choice?.message?.text || choice?.message?.output_text);
+  if (fromMessageText) return fromMessageText;
 
   // Text-completions style.
-  if (typeof choice?.text === "string" && choice.text.trim()) {
-    return choice.text;
-  }
+  const fromChoiceText = flattenText(choice?.text || choice?.content);
+  if (fromChoiceText) return fromChoiceText;
 
   // Responses API style.
-  if (typeof data?.output_text === "string" && data.output_text.trim()) {
-    return data.output_text;
+  const fromOutputText = flattenText(data?.output_text);
+  if (fromOutputText) return fromOutputText;
+
+  // Some APIs return nested output/content arrays with text fields.
+  const fromOutput = flattenText(data?.output);
+  if (fromOutput) return fromOutput;
+
+  // Gemini-style candidates payload.
+  const fromCandidates = flattenText(data?.candidates);
+  if (fromCandidates) return fromCandidates;
+
+  return "";
+}
+
+function flattenText(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.trim();
+
+  if (Array.isArray(value)) {
+    const text = value
+      .map((item) => flattenText(item))
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    return text;
+  }
+
+  if (typeof value === "object") {
+    const direct = [value.text, value.content, value.output_text, value.value]
+      .map((item) => flattenText(item))
+      .find(Boolean);
+    if (direct) return direct;
+
+    const nested = [value.message, value.delta, value.output, value.parts, value.candidates]
+      .map((item) => flattenText(item))
+      .find(Boolean);
+    if (nested) return nested;
   }
 
   return "";
