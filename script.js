@@ -1,5 +1,9 @@
 const output = document.getElementById("output");
 const imgEl = document.getElementById("dishImage");
+const cookBtn = document.getElementById("cook");
+const worseBtn = document.getElementById("worse");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const loadingText = document.getElementById("loadingText");
 //Worker URL - replace with your own if self-hosting or using a different service
 const WORKER_URL = "https://cooked-serverside.wangz9096z.workers.dev";
 
@@ -57,7 +61,20 @@ Description: ${description}`,
   imgEl.style.display = "block";
 }
 
-document.getElementById("cook").onclick = async () => {
+function setLoadingState(isLoading, message) {
+  loadingOverlay.style.display = isLoading ? "flex" : "none";
+  loadingOverlay.setAttribute("aria-hidden", isLoading ? "false" : "true");
+
+  if (isLoading && message) {
+    loadingText.textContent = message;
+  }
+
+  cookBtn.disabled = isLoading;
+  worseBtn.disabled = isLoading;
+}
+
+cookBtn.onclick = async () => {
+  setLoadingState(true, "Cooking something illegal...");
   output.textContent = "Cooking something illegal...";
   imgEl.style.display = "none";
 
@@ -67,12 +84,15 @@ document.getElementById("cook").onclick = async () => {
     await generateImage(lastDish);
   } catch (e) {
     output.textContent = JSON.stringify(e, null, 2);
+  } finally {
+    setLoadingState(false);
   }
 };
 
-document.getElementById("worse").onclick = async () => {
+worseBtn.onclick = async () => {
   if (!lastDish) return;
 
+  setLoadingState(true, "Making it worse...");
   output.textContent = "Making it worse...";
   imgEl.style.display = "none";
 
@@ -84,5 +104,7 @@ document.getElementById("worse").onclick = async () => {
     await generateImage(lastDish);
   } catch (e) {
     output.textContent = JSON.stringify(e, null, 2);
+  } finally {
+    setLoadingState(false);
   }
 };
