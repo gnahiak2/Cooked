@@ -52,13 +52,3 @@ Cloudflare Workers solve all of this cleanly.
 ### Models Used
 - **Text:** `qwen/qwen3-32b`
 - **Images:** `google/gemini-2.5-flash-image`
-
----
-
-## 🚀 Deployment
-
-### Backend (Cloudflare Worker)
-
-```bash
-wrangler deploy
-```
